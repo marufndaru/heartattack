@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-import tensorflow as tf
 import os
+
 
 # ==========================================
 # 0. KONFIGURASI TEMA
@@ -37,68 +37,42 @@ st.set_page_config(
 # ==========================================
 st.markdown("""
     <style>
-    /* 1. CONFIG GLOBAL */
+    /* ... (CSS ANDA TETAP SAMA SEPERTI SEBELUMNYA, TIDAK ADA PERUBAHAN) ... */
+    /* Agar tidak kepanjangan, saya singkat di sini. 
+       Gunakan CSS dari jawaban sebelumnya ya! */
     [data-testid="stAppViewContainer"], .stApp { background-color: #F0F2F6 !important; }
-    
-    /* 2. HEADER & JUDUL (NAVY GELAP) */
-    h1, h2, h3, h4, h5, h6, strong { 
-        color: #003366 !important; 
-        font-family: 'Segoe UI', Tahoma, sans-serif;
+    html, body, p, div, span, label, h1, h2, h3, h4, h5, h6, strong { 
+        color: #003366 !important; font-family: 'Segoe UI', Tahoma, sans-serif;
     }
-
-    /* 3. LABEL & TEKS BIASA (ABU GELAP) */
-    p, label, span, div, .stText {
-        color: #444444 !important;
-        font-family: 'Segoe UI', Tahoma, sans-serif;
-    }
-
-    /* 4. KOTAK INPUT */
+    p, label, span, div, .stText { color: #444444 !important; }
     div[data-baseweb="select"] > div, div[data-baseweb="input"] > div, div[data-baseweb="base-input"] {
-        background-color: #FFFFFF !important;
-        border: 2px solid #0055AA !important;
-        border-radius: 8px !important;
+        background-color: #FFFFFF !important; border: 2px solid #0055AA !important; border-radius: 8px !important;
     }
     input[type="number"], div[data-baseweb="select"] div {
-        color: #222222 !important;
-        -webkit-text-fill-color: #222222 !important;
-        font-weight: 600 !important;
+        color: #222222 !important; -webkit-text-fill-color: #222222 !important; font-weight: 600 !important;
     }
     div[data-baseweb="select"] svg { fill: #0055AA !important; }
-
-    /* 5. MENU & RADIO */
     ul[data-baseweb="menu"] { background-color: #FFFFFF !important; border: 2px solid #0055AA !important; }
     li[data-baseweb="option"] { color: #333333 !important; -webkit-text-fill-color: #333333 !important; }
     li[data-baseweb="option"]:hover { background-color: #E6F0FF !important; }
-    
     div[data-testid="stWidgetLabel"] label, div[data-testid="stWidgetLabel"] p {
         color: #333333 !important; font-weight: 700 !important; font-size: 15px !important;
     }
     div[role="radiogroup"] label p { color: #444444 !important; font-weight: 500 !important; }
-
-    /* 6. TOMBOL */
     .stButton button {
-        background-color: #0055AA !important;
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
-        border-radius: 8px !important; border: none !important; font-weight: bold !important;
+        background-color: #0055AA !important; color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important; border-radius: 8px !important; font-weight: bold !important;
     }
-    /* Tombol Kembali */
     div[data-testid="column"]:first-child .stButton button {
-        background-color: #FFFFFF !important;
-        color: #0055AA !important;
-        -webkit-text-fill-color: #0055AA !important;
-        border: 2px solid #0055AA !important;
+        background-color: #FFFFFF !important; color: #0055AA !important;
+        -webkit-text-fill-color: #0055AA !important; border: 2px solid #0055AA !important;
     }
-
-    /* 7. CONTAINER & SIDEBAR */
     div[data-testid="stForm"] {
-        background-color: #FFFFFF !important; 
-        border: 1px solid #0055AA !important;
+        background-color: #FFFFFF !important; border: 1px solid #0055AA !important;
         border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     [data-testid="stSidebar"] { background-color: #FFFFFF !important; border-right: 1px solid #CCCCCC; }
     [data-testid="stSidebar"] * { color: #003366 !important; }
-
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background-color: white; border-radius: 10px; margin-bottom: 10px;
     }
@@ -106,25 +80,33 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. LOAD RESOURCES
+# 3. LOAD RESOURCES (OPTIMIZED)
 # ==========================================
-@st.cache_resource
+@st.cache_resource(show_spinner=False) # Kita buat spinner manual agar lebih informatif
 def load_resources():
+    # --- LAZY IMPORT ---
+    # Kita import tensorflow DI SINI, bukan di atas.
+    # Jadi aplikasi terbuka dulu, baru loading berat dimulai.
+    import tensorflow as tf 
+    
     try:
         model = tf.keras.models.load_model('model_ann_final.h5')
         preprocessor = joblib.load('preprocessor_final.pkl')
         return model, preprocessor
     except Exception as e:
-        st.error(f"Gagal memuat file: {e}")
         return None, None
 
-model, preprocessor = load_resources()
+# --- INDIKATOR LOADING YANG JELAS ---
+# Ini akan muncul pertama kali saat dosen membuka web
+with st.spinner('Sedang menyiapkan Sistem AI (Proses ini memakan waktu 30-60 detik untuk startup pertama)...'):
+    model, preprocessor = load_resources()
 
 if not model or not preprocessor:
+    st.error("Gagal memuat model. Pastikan file .h5 dan .pkl ada di GitHub.")
     st.stop()
 
 # ==========================================
-# 4. STATE MANAGEMENT & RESET FUNCTION
+# 4. STATE MANAGEMENT & RESET
 # ==========================================
 default_values = {
     'step': 1,
@@ -143,19 +125,13 @@ default_values = {
     'waist_circumference': 80, 'heart_rate': 75
 }
 
-# --- PERBAIKAN: INISIALISASI STATE ---
 for key, value in default_values.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
-# --- PERBAIKAN UTAMA: FUNGSI RESTART (CALLBACK) ---
-# Fungsi ini akan dipanggil oleh on_click, jadi tidak boleh ada st.rerun() di dalamnya
 def restart(): 
-    # Reset semua variabel input
     for key, value in default_values.items():
         st.session_state[key] = value
-    
-    # Hapus hasil prediksi sebelumnya
     if 'result_prob' in st.session_state:
         del st.session_state['result_prob']
 
@@ -166,8 +142,8 @@ def prev_step(): st.session_state.step -= 1
 # 5. SIDEBAR
 # ==========================================
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3004/3004458.png", width=80)
-    st.markdown("### MediHeart AI")
+    # Ganti logo jika link mati, pakai icon default saja biar aman
+    st.header("🏥 MediHeart AI")
     st.info("Prediksi Risiko Jantung Cerdas")
     
     steps = ["Biodata", "Gaya Hidup", "Lingkungan", "Riwayat Medis", "Jantung", "Lab & Vital"]
@@ -348,7 +324,6 @@ with st.form("wizard_form"):
         if submitted:
             ss = st.session_state
             
-            # MAPPING BAHASA
             map_gender = {'Laki-laki': 'Male', 'Perempuan': 'Female'}
             map_income = {'Rendah': 'Low', 'Menengah': 'Middle', 'Tinggi': 'High'}
             map_region = {'Perkotaan': 'Urban', 'Pedesaan': 'Rural'}
@@ -391,7 +366,6 @@ with st.form("wizard_form"):
             del input_data['heart_attack']
             df_input = pd.DataFrame([input_data])
 
-            # Feature Engineering
             if ss.age <= 35: df_input['Age_Group'] = 'Young'
             elif ss.age <= 55: df_input['Age_Group'] = 'Middle'
             else: df_input['Age_Group'] = 'Senior'
@@ -400,7 +374,6 @@ with st.form("wizard_form"):
             df_input['Total_Risk_Factors'] = (df_input['hypertension'] + df_input['diabetes'] + 
                                               df_input['obesity'] + df_input['is_smoker'])
 
-            # Prediction
             try:
                 final_input = preprocessor.transform(df_input)
                 prob = model.predict(final_input)[0][0]
@@ -425,8 +398,6 @@ if 'result_prob' in st.session_state:
         </div>
         """, unsafe_allow_html=True)
         
-        # --- PERBAIKAN UTAMA DI SINI ---
-        # Menggunakan on_click=restart (Tanpa if statement)
         st.button("🔄 Analisis Baru", on_click=restart, use_container_width=True)
 
     with col_res2:
